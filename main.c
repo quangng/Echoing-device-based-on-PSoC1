@@ -9,7 +9,7 @@
 //  Student ID: 1005157
 //  Helsinki Metropolia University of Applied Sciences
 //  License: GPL
-//	Version 1.0 from May 2012
+//  Version 1.0 from May 2012
 //**************************************************************************************************
 #include <m8c.h>
 #include "PSoCAPI.h"  
