@@ -1,0 +1,26 @@
+# DO NOT DELETE
+./obj/boot.o : \
+   C:/PROGRA~1/Cypress/PSOCDE~1/5.2/Common/CY110F~1/tools/include/CY8C27~1/m8c.inc\
+   C:/PROGRA~1/Cypress/PSOCDE~1/5.2/Common/CY110F~1/tools/include/CY8C27~1/m8ssc.inc\
+   D:\Study\EMBEDD~2\Home\FINALP~1\FINALP~1\lib\GLOBAL~1.INC\
+   D:\Study\EMBEDD~2\Home\FINALP~1\FINALP~1\memory.inc
+./obj/main.o :  ./lib/LCD.h ./lib/PSoCAPI.h ./lib/PSOCGP~1.H\
+   ./lib/UART.h\
+   C:/PROGRA~1/Cypress/PSOCDE~1/5.2/Common/CY110F~1/tools/include/CY8C27~1/m8c.h
+./lib/obj/lcd.o :  ./lib/LCD.inc\
+   C:/PROGRA~1/Cypress/PSOCDE~1/5.2/Common/CY110F~1/tools/include/CY8C27~1/m8c.inc\
+   D:\Study\EMBEDD~2\Home\FINALP~1\FINALP~1\memory.inc
+./lib/obj/psocconfig.o :  ./lib/GLOBAL~1.INC\
+   C:/PROGRA~1/Cypress/PSOCDE~1/5.2/Common/CY110F~1/tools/include/CY8C27~1/m8c.inc\
+   D:\Study\EMBEDD~2\Home\FINALP~1\FINALP~1\memory.inc
+./lib/obj/psocconfigtbl.o : \
+   C:/PROGRA~1/Cypress/PSOCDE~1/5.2/Common/CY110F~1/tools/include/CY8C27~1/m8c.inc
+./lib/obj/psocgpioint.o :  ./lib/PSOCGP~1.INC\
+   C:/PROGRA~1/Cypress/PSOCDE~1/5.2/Common/CY110F~1/tools/include/CY8C27~1/m8c.inc
+./lib/obj/uart.o :  ./lib/UART.inc\
+   C:/PROGRA~1/Cypress/PSOCDE~1/5.2/Common/CY110F~1/tools/include/CY8C27~1/m8c.inc\
+   D:\Study\EMBEDD~2\Home\FINALP~1\FINALP~1\memory.inc
+./lib/obj/uartint.o :  ./lib/UART.inc\
+   C:/PROGRA~1/Cypress/PSOCDE~1/5.2/Common/CY110F~1/tools/include/CY8C27~1/m8c.inc\
+   D:\Study\EMBEDD~2\Home\FINALP~1\FINALP~1\memory.inc
+./lib/obj/uartplus.o : 

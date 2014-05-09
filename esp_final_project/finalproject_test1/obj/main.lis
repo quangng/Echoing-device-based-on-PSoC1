@@ -1,0 +1,535 @@
+                        .module main.c
+                        .area text(rom, con, rel)
+ 0000                   .dbfile ./main.c
+                        .area data(ram, con, rel)
+ 0000                   .dbfile ./main.c
+ 0000           _mode::
+ 0000                   .blkb 2
+                        .area idata(rom,lit)
+ 0000 0000              .word 0
+                        .area data(ram, con, rel)
+ 0002                   .dbfile ./main.c
+ 0002                   .dbfile D:\Study\EMBEDD~2\Home\FINALP~1\FINALP~1\main.c
+ 0002                   .dbsym e mode _mode I
+                        .area text(rom, con, rel)
+ 0000                   .dbfile D:\Study\EMBEDD~2\Home\FINALP~1\FINALP~1\main.c
+ 0000                   .dbfunc e main _main fV
+ 0000           _main::
+ 0000                   .dbline -1
+ 0000                   .dbline 37
+ 0000           ; //**************************************************************************************************
+ 0000           ; //  Description: This is the project of the Embedded Systems Programming course.
+ 0000           ; //  The goal of the project is to make an echo device using PSoC. In particular,
+ 0000           ; //  Psoc is connected to PC using serial RS232 cable, and text inputted from the PC 
+ 0000           ; //  is displayed on LCD. Button is used to activate/deactivate the serial line communication, 
+ 0000           ; //  and the status of the line is show in LCD (offline / online)
+ 0000           ; //
+ 0000           ; //  Author: Nguyen Quang Vu
+ 0000           ; //  Student ID: 1005157
+ 0000           ; //  Helsinki Metropolia University of Applied Sciences
+ 0000           ; //  Copyright (C) 2012 by Nguyen Quang Vu
+ 0000           ; //    Version 1.0 from May 2012
+ 0000           ; //**************************************************************************************************
+ 0000           ; #include <m8c.h>
+ 0000           ; #include "PSoCAPI.h"  
+ 0000           ; #include "PSoCGPIOINT.h"
+ 0000           ; 
+ 0000           ; #define CLEAR 0x01
+ 0000           ; #define forever 1
+ 0000           ; #define statusButton (statusButton_Data_ADDR & statusButton_MASK)     
+ 0000           ; 
+ 0000           ; //Global variables
+ 0000           ; char bufChar[16];
+ 0000           ; char bufChar1[16];
+ 0000           ; int mode = 0;  // Integer variable for choosing online/offline mode
+ 0000           ; char *strPtr;
+ 0000           ; 
+ 0000           ; //Function prototypes
+ 0000           ; void initialize(void);
+ 0000           ; void buttonISR(void);
+ 0000           ; void displayLCD(void);
+ 0000           ; void echoText(void);
+ 0000           ; 
+ 0000           ; //****************************************************************************
+ 0000           ; //                          Main Function           
+ 0000           ; //****************************************************************************
+ 0000           ; void main(void){
+ 0000                   .dbline 38
+ 0000           ;     initialize();                 //Initializing the system
+ 0000 9024              xcall _initialize
+ 0002 801F              xjmp L3
+ 0004           L2:
+ 0004                   .dbline 40
+ 0004           ;    
+ 0004           ;     while(forever) {
+ 0004                   .dbline 41
+ 0004           ;        if(UART_bCmdCheck() != 0){ // Checks if command terminator has been received
+ 0004 10                push X
+ 0005 7C0000            xcall _UART_bCmdCheck
+ 0008 20                pop X
+ 0009 3900              cmp A,0
+ 000B A016              jz L5
+ 000D                   .dbline 42
+ 000D           ;             strPtr = UART_szGetRestOfParams(); 
+ 000D                   .dbline 42
+ 000D 10                push X
+ 000E 7C0000            xcall _UART_szGetRestOfParams
+ 0011 5A00              mov [__r1],X
+ 0013 20                pop X
+ 0014 5F0100            mov [_strPtr+1],[__r1]
+ 0017 5300              mov [_strPtr],A
+ 0019                   .dbline 43
+ 0019           ;               displayLCD();         // Display the text on the LCD                                    
+ 0019 9119              xcall _displayLCD
+ 001B                   .dbline 44
+ 001B           ;             echoText();           //Print the text back on the terminal/ echo the text
+ 001B 91A4              xcall _echoText
+ 001D                   .dbline 45
+ 001D           ;                       UART_CmdReset();      // Reset command buffer  
+ 001D 10                push X
+ 001E 7C0000            xcall _UART_CmdReset
+ 0021 20                pop X
+ 0022                   .dbline 46
+ 0022           ;           }
+ 0022           L5:
+ 0022                   .dbline 47
+ 0022           ;    }//End forever loop
+ 0022           L3:
+ 0022                   .dbline 40
+ 0022 8FE1              xjmp L2
+ 0024           X0:
+ 0024                   .dbline -2
+ 0024           L1:
+ 0024                   .dbline 0 ; func end
+ 0024 8FFF              jmp .
+ 0026                   .dbend
+ 0026                   .dbfunc e initialize _initialize fV
+ 0026           _initialize::
+ 0026                   .dbline -1
+ 0026                   .dbline 53
+ 0026           ; }//End main function
+ 0026           ; 
+ 0026           ; //*********************************************************************************
+ 0026           ; //                 Function for initializing the system
+ 0026           ; //*********************************************************************************
+ 0026           ; void initialize(void){
+ 0026                   .dbline 54
+ 0026           ;     UART_CmdReset();                      // Initialize receiver/cmd buffer
+ 0026 10                push X
+ 0027 7C0000            xcall _UART_CmdReset
+ 002A                   .dbline 55
+ 002A           ;     UART_IntCntl(UART_ENABLE_RX_INT);     // Enable RX interrupts 
+ 002A 5001              mov A,1
+ 002C 7C0000            xcall _UART_IntCntl
+ 002F                   .dbline 56
+ 002F           ;     UART_Start(UART_PARITY_NONE);         // Enable UART
+ 002F 5000              mov A,0
+ 0031 7C0000            xcall _UART_Start
+ 0034                   .dbline 57
+ 0034           ;       UART_CPutString("You can only type in a maximum of 32 characters at a time");
+ 0034 5025              mov A,>L8
+ 0036 08                push A
+ 0037 5025              mov A,<L8
+ 0039 5C                mov X,A
+ 003A 18                pop A
+ 003B 7C0000            xcall _UART_CPutString
+ 003E                   .dbline 58
+ 003E           ;       UART_CPutString("\r\n");
+ 003E 5022              mov A,>L9
+ 0040 08                push A
+ 0041 5022              mov A,<L9
+ 0043 5C                mov X,A
+ 0044 18                pop A
+ 0045 7C0000            xcall _UART_CPutString
+ 0048                   .dbline 60
+ 0048           ;    
+ 0048           ;     LCD_Start();                          // Initialize the LCD
+ 0048 7C0000            xcall _LCD_Start
+ 004B                   .dbline 61
+ 004B           ;     LCD_Position(0,5);
+ 004B 5705              mov X,5
+ 004D 5000              mov A,0
+ 004F 7C0000            xcall _LCD_Position
+ 0052                   .dbline 62
+ 0052           ;     LCD_PrCString("PSoC");
+ 0052 501D              mov A,>L10
+ 0054 08                push A
+ 0055 501D              mov A,<L10
+ 0057 5C                mov X,A
+ 0058 18                pop A
+ 0059 7C0000            xcall _LCD_PrCString
+ 005C                   .dbline 63
+ 005C           ;     LCD_Position(1,1);
+ 005C 5001              mov A,1
+ 005E 5701              mov X,1
+ 0060 7C0000            xcall _LCD_Position
+ 0063                   .dbline 64
+ 0063           ;     LCD_PrCString("FINAL PROJECT");
+ 0063 500F              mov A,>L11
+ 0065 08                push A
+ 0066 500F              mov A,<L11
+ 0068 5C                mov X,A
+ 0069 18                pop A
+ 006A 7C0000            xcall _LCD_PrCString
+ 006D 20                pop X
+ 006E                   .dbline 66
+ 006E           ;     
+ 006E           ;     M8C_EnableGInt ;                      // Turn on global interrupts
+ 006E 7101                      or  F, 01h
+ 0070           
+ 0070                   .dbline 67
+ 0070           ;       M8C_EnableIntMask(INT_MSK0 , INT_MSK0_GPIO);
+ 0070 43E020            or REG[0xe0],32
+ 0073                   .dbline -2
+ 0073           L7:
+ 0073                   .dbline 0 ; func end
+ 0073 7F                ret
+ 0074                   .dbend
+ 0074                   .dbfunc e buttonISR _buttonISR fV
+ 0074           _buttonISR::
+ 0074                   .dbline -1
+ 0074 08                push A
+ 0075 5100              mov A,[__r0]
+ 0077 08                push A
+ 0078 5100              mov A,[__r1]
+ 007A 08                push A
+ 007B 5100              mov A,[__r2]
+ 007D 08                push A
+ 007E 5100              mov A,[__r3]
+ 0080 08                push A
+ 0081 5100              mov A,[__r4]
+ 0083 08                push A
+ 0084 5100              mov A,[__r5]
+ 0086 08                push A
+ 0087 5100              mov A,[__r6]
+ 0089 08                push A
+ 008A 5100              mov A,[__r7]
+ 008C 08                push A
+ 008D 5100              mov A,[__r8]
+ 008F 08                push A
+ 0090 5100              mov A,[__r9]
+ 0092 08                push A
+ 0093 5100              mov A,[__r10]
+ 0095 08                push A
+ 0096 5100              mov A,[__r11]
+ 0098 08                push A
+ 0099 5100              mov A,[__rX]
+ 009B 08                push A
+ 009C 5100              mov A,[__rY]
+ 009E 08                push A
+ 009F 5100              mov A,[__rZ]
+ 00A1 08                push A
+ 00A2                   .dbline 75
+ 00A2           ;     
+ 00A2           ; }
+ 00A2           ; 
+ 00A2           ; //***********************************************************************
+ 00A2           ; //          Interrupt service routine for the status button
+ 00A2           ; //***********************************************************************
+ 00A2           ; #pragma interrupt_handler buttonISR
+ 00A2           ; void buttonISR(void){
+ 00A2                   .dbline 76
+ 00A2           ;     if(statusButton && mode == 0){
+ 00A2 5D00              mov A,REG[0]
+ 00A4 5300              mov [__r0],A
+ 00A6 470004            tst [__r0],4
+ 00A9 A02E              jz L13
+ 00AB 3C0000            cmp [_mode],0
+ 00AE B029              jnz L13
+ 00B0 3C0100            cmp [_mode+1],0
+ 00B3 B024              jnz L13
+ 00B5           X1:
+ 00B5                   .dbline 77
+ 00B5           ;           UART_Stop();
+ 00B5                   .dbline 77
+ 00B5 10                push X
+ 00B6 7C0000            xcall _UART_Stop
+ 00B9                   .dbline 78
+ 00B9           ;           LCD_Control(CLEAR);
+ 00B9 5001              mov A,1
+ 00BB 7C0000            xcall _LCD_Control
+ 00BE                   .dbline 79
+ 00BE           ;               LCD_Position(0,0);
+ 00BE 5000              mov A,0
+ 00C0 5700              mov X,0
+ 00C2 7C0000            xcall _LCD_Position
+ 00C5                   .dbline 80
+ 00C5           ;               LCD_PrCString("OFFLINE");
+ 00C5 5007              mov A,>L15
+ 00C7 08                push A
+ 00C8 5007              mov A,<L15
+ 00CA 5C                mov X,A
+ 00CB 18                pop A
+ 00CC 7C0000            xcall _LCD_PrCString
+ 00CF 20                pop X
+ 00D0                   .dbline 81
+ 00D0           ;               mode = 1;
+ 00D0 550101            mov [_mode+1],1
+ 00D3 550000            mov [_mode],0
+ 00D6                   .dbline 82
+ 00D6           ;       }
+ 00D6 802E              xjmp L14
+ 00D8           L13:
+ 00D8                   .dbline 83
+ 00D8           ;       else if(mode == 1){
+ 00D8 3C0000            cmp [_mode],0
+ 00DB B029              jnz L16
+ 00DD 3C0101            cmp [_mode+1],1
+ 00E0 B024              jnz L16
+ 00E2           X2:
+ 00E2                   .dbline 84
+ 00E2           ;           UART_Start(UART_PARITY_NONE);
+ 00E2                   .dbline 84
+ 00E2 10                push X
+ 00E3 5000              mov A,0
+ 00E5 7C0000            xcall _UART_Start
+ 00E8                   .dbline 85
+ 00E8           ;               LCD_Control(CLEAR);
+ 00E8 5001              mov A,1
+ 00EA 7C0000            xcall _LCD_Control
+ 00ED                   .dbline 86
+ 00ED           ;               LCD_Position(0,0);
+ 00ED 5000              mov A,0
+ 00EF 5700              mov X,0
+ 00F1 7C0000            xcall _LCD_Position
+ 00F4                   .dbline 87
+ 00F4           ;               LCD_PrCString("ONLINE");
+ 00F4 5000              mov A,>L18
+ 00F6 08                push A
+ 00F7 5000              mov A,<L18
+ 00F9 5C                mov X,A
+ 00FA 18                pop A
+ 00FB 7C0000            xcall _LCD_PrCString
+ 00FE 20                pop X
+ 00FF                   .dbline 88
+ 00FF           ;               mode = 0;
+ 00FF 550100            mov [_mode+1],0
+ 0102 550000            mov [_mode],0
+ 0105                   .dbline 89
+ 0105           ;       }
+ 0105           L16:
+ 0105           L14:
+ 0105                   .dbline -2
+ 0105           L12:
+ 0105 18                pop A
+ 0106 5300              mov [__rZ],A
+ 0108 18                pop A
+ 0109 5300              mov [__rY],A
+ 010B 18                pop A
+ 010C 5300              mov [__rX],A
+ 010E 18                pop A
+ 010F 5300              mov [__r11],A
+ 0111 18                pop A
+ 0112 5300              mov [__r10],A
+ 0114 18                pop A
+ 0115 5300              mov [__r9],A
+ 0117 18                pop A
+ 0118 5300              mov [__r8],A
+ 011A 18                pop A
+ 011B 5300              mov [__r7],A
+ 011D 18                pop A
+ 011E 5300              mov [__r6],A
+ 0120 18                pop A
+ 0121 5300              mov [__r5],A
+ 0123 18                pop A
+ 0124 5300              mov [__r4],A
+ 0126 18                pop A
+ 0127 5300              mov [__r3],A
+ 0129 18                pop A
+ 012A 5300              mov [__r2],A
+ 012C 18                pop A
+ 012D 5300              mov [__r1],A
+ 012F 18                pop A
+ 0130 5300              mov [__r0],A
+ 0132 18                pop A
+ 0133                   .dbline 0 ; func end
+ 0133 7E                reti
+ 0134                   .dbend
+ 0134                   .dbfunc e displayLCD _displayLCD fV
+ 0134           ;              i -> X+0
+ 0134           _displayLCD::
+ 0134                   .dbline -1
+ 0134 10                push X
+ 0135 4F                mov X,SP
+ 0136 3802              add SP,2
+ 0138                   .dbline 95
+ 0138           ; }
+ 0138           ; 
+ 0138           ; //***********************************************************************
+ 0138           ; //                 Display the text on the LCD
+ 0138           ; //***********************************************************************
+ 0138           ; void displayLCD(void){
+ 0138                   .dbline 98
+ 0138           ;     unsigned int i;
+ 0138           ;       
+ 0138           ;     LCD_Control(CLEAR);
+ 0138 10                push X
+ 0139 5001              mov A,1
+ 013B 7C0000            xcall _LCD_Control
+ 013E 20                pop X
+ 013F                   .dbline 99
+ 013F           ;       for(i = 0; i < 16; i++){
+ 013F 560100            mov [X+1],0
+ 0142 560000            mov [X+0],0
+ 0145 801A              xjmp L23
+ 0147           L20:
+ 0147                   .dbline 99
+ 0147                   .dbline 100
+ 0147           ;           bufChar[i] = strPtr[i];
+ 0147 5201              mov A,[X+1]
+ 0149 0201              add A,[_strPtr+1]
+ 014B 5300              mov [__r1],A
+ 014D 3E00              mvi A,[__r1]
+ 014F 5300              mov [__r0],A
+ 0151 5201              mov A,[X+1]
+ 0153 0112              add A,<_bufChar
+ 0155 5300              mov [__r3],A
+ 0157 5100              mov A,[__r0]
+ 0159 3F00              mvi [__r3],A
+ 015B                   .dbline 101
+ 015B           ;       }
+ 015B           L21:
+ 015B                   .dbline 99
+ 015B 7701              inc [X+1]
+ 015D 0F0000            adc [X+0],0
+ 0160           L23:
+ 0160                   .dbline 99
+ 0160 5201              mov A,[X+1]
+ 0162 1110              sub A,16
+ 0164 5200              mov A,[X+0]
+ 0166 1900              sbb A,0
+ 0168 CFDE              jc L20
+ 016A           X3:
+ 016A                   .dbline 102
+ 016A           ;       LCD_Position(0,0);
+ 016A 10                push X
+ 016B 5000              mov A,0
+ 016D 5700              mov X,0
+ 016F 7C0000            xcall _LCD_Position
+ 0172                   .dbline 103
+ 0172           ;       LCD_PrString(bufChar);
+ 0172 5012              mov A,>_bufChar
+ 0174 08                push A
+ 0175 5012              mov A,<_bufChar
+ 0177 5C                mov X,A
+ 0178 18                pop A
+ 0179 7C0000            xcall _LCD_PrString
+ 017C 20                pop X
+ 017D                   .dbline 105
+ 017D           ;                       
+ 017D           ;       for(i = 16; i < 33; i++){
+ 017D 560110            mov [X+1],16
+ 0180 560000            mov [X+0],0
+ 0183 801C              xjmp L27
+ 0185           L24:
+ 0185                   .dbline 105
+ 0185                   .dbline 106
+ 0185           ;           bufChar1[i - 16] = strPtr[i];
+ 0185 5201              mov A,[X+1]
+ 0187 0201              add A,[_strPtr+1]
+ 0189 5300              mov [__r1],A
+ 018B 3E00              mvi A,[__r1]
+ 018D 5300              mov [__r0],A
+ 018F 5201              mov A,[X+1]
+ 0191 1110              sub A,16
+ 0193 0102              add A,<_bufChar1
+ 0195 5300              mov [__r3],A
+ 0197 5100              mov A,[__r0]
+ 0199 3F00              mvi [__r3],A
+ 019B                   .dbline 107
+ 019B           ;       }
+ 019B           L25:
+ 019B                   .dbline 105
+ 019B 7701              inc [X+1]
+ 019D 0F0000            adc [X+0],0
+ 01A0           L27:
+ 01A0                   .dbline 105
+ 01A0 5201              mov A,[X+1]
+ 01A2 1121              sub A,33
+ 01A4 5200              mov A,[X+0]
+ 01A6 1900              sbb A,0
+ 01A8 CFDC              jc L24
+ 01AA           X4:
+ 01AA                   .dbline 108
+ 01AA           ;       LCD_Position(1,0);
+ 01AA 10                push X
+ 01AB 5700              mov X,0
+ 01AD 5001              mov A,1
+ 01AF 7C0000            xcall _LCD_Position
+ 01B2                   .dbline 109
+ 01B2           ;       LCD_PrString(bufChar1);
+ 01B2 5002              mov A,>_bufChar1
+ 01B4 08                push A
+ 01B5 5002              mov A,<_bufChar1
+ 01B7 5C                mov X,A
+ 01B8 18                pop A
+ 01B9 7C0000            xcall _LCD_PrString
+ 01BC 20                pop X
+ 01BD                   .dbline -2
+ 01BD           L19:
+ 01BD 38FE              add SP,-2
+ 01BF 20                pop X
+ 01C0                   .dbline 0 ; func end
+ 01C0 7F                ret
+ 01C1                   .dbsym l i 0 i
+ 01C1                   .dbend
+ 01C1                   .dbfunc e echoText _echoText fV
+ 01C1           _echoText::
+ 01C1                   .dbline -1
+ 01C1                   .dbline 115
+ 01C1           ; }
+ 01C1           ; 
+ 01C1           ; //**********************************************************************
+ 01C1           ; //               Echo the text back to the terminal
+ 01C1           ; //**********************************************************************
+ 01C1           ; void echoText(void){
+ 01C1                   .dbline 116
+ 01C1           ;     UART_PutString(strPtr);     
+ 01C1 10                push X
+ 01C2 5100              mov A,[_strPtr]
+ 01C4 08                push A
+ 01C5 5101              mov A,[_strPtr+1]
+ 01C7 5C                mov X,A
+ 01C8 18                pop A
+ 01C9 7C0000            xcall _UART_PutString
+ 01CC                   .dbline 117
+ 01CC           ;       UART_CPutString("\r\n");
+ 01CC 5022              mov A,>L9
+ 01CE 08                push A
+ 01CF 5022              mov A,<L9
+ 01D1 5C                mov X,A
+ 01D2 18                pop A
+ 01D3 7C0000            xcall _UART_CPutString
+ 01D6 20                pop X
+ 01D7                   .dbline -2
+ 01D7           L28:
+ 01D7                   .dbline 0 ; func end
+ 01D7 7F                ret
+ 01D8                   .dbend
+                        .area bss(ram, con, rel)
+ 0000                   .dbfile D:\Study\EMBEDD~2\Home\FINALP~1\FINALP~1\main.c
+ 0000           _strPtr::
+ 0000                   .blkb 2
+ 0002                   .dbsym e strPtr _strPtr pc
+ 0002           _bufChar1::
+ 0002                   .blkb 16
+ 0012                   .dbsym e bufChar1 _bufChar1 A[16:16]c
+ 0012           _bufChar::
+ 0012                   .blkb 16
+ 0022                   .dbsym e bufChar _bufChar A[16:16]c
+                        .area lit(rom, con, rel, lit)
+ 0000           L18:
+ 0000 4F4E4C494E4500    .byte 'O,'N,'L,'I,'N,'E,0
+ 0007           L15:
+ 0007 4F46464C494E4500  .byte 'O,'F,'F,'L,'I,'N,'E,0
+ 000F           L11:
+ 000F 46494E414C2050524F4A45435400      .byte 'F,'I,'N,'A,'L,32,'P,'R,'O,'J,'E,'C,'T,0
+ 001D           L10:
+ 001D 50536F4300        .byte 'P,'S,'o,'C,0
+ 0022           L9:
+ 0022 0D0A00            .byte 13,10,0
+ 0025           L8:
+ 0025 596F752063616E206F6E6C7920747970  .byte 'Y,'o,'u,32,'c,'a,'n,32,'o,'n,'l,'y,32,'t,'y,'p
+ 0035 6520696E2061206D6178696D756D206F  .byte 'e,32,'i,'n,32,'a,32,'m,'a,'x,'i,'m,'u,'m,32,'o
+ 0045 66203332206368617261637465727320  .byte 'f,32,51,50,32,'c,'h,'a,'r,'a,'c,'t,'e,'r,'s,32
+ 0055 617420612074696D6500      .byte 'a,'t,32,'a,32,'t,'i,'m,'e,0
